@@ -6,7 +6,7 @@
 Restfull 3D Map Service API
 Using images to contribute 3D map
 
-![img.png](img.png)
+![img.png](3dmapping-localization-main/img.png)
 
 # **1. Upload all the images of map**
 
