@@ -1,6 +1,6 @@
 # 3d_mapping_localization_GPS
 
-![](cloudpoint.png)
+![](3dmapping-localization-maincloudpoint.png)
 # **About:**
 
 Restfull 3D Map Service API
