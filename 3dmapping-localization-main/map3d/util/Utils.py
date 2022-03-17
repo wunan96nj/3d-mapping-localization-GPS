@@ -273,7 +273,7 @@ def save_prior_position(json_base_dir, save_path):
     file_list = os.listdir(json_base_dir)
 
 
-    f  = open(save_path, 'w')
+    f  = open(save_path+ "coords.txt", 'w')
     lat_ref, lon_ref, h_ref = 0.0, 0.0, 0.0
     for fileindex in range(len(file_list)):
         with open(json_base_dir + file_list[fileindex]) as json_file:
@@ -283,6 +283,10 @@ def save_prior_position(json_base_dir, save_path):
             h = data["pz"]
             if fileindex == 0:
                 lat_ref, lon_ref, h_ref = lat, lon, h
+
+                with open(save_path + "map_origin.txt", 'w') as map_origin_f:
+                    map_origin_f.write("%f %f %f\n" % (lat_ref, lon_ref, h_ref))
+
             xEast, yNorth, zUp = geodetic_to_enu(lat, lon, h, lat_ref, lon_ref, h_ref)
 
         f.write("%s %f %f %f\n" %(data["image_name"], xEast, yNorth, zUp))
@@ -291,10 +295,10 @@ def save_prior_position(json_base_dir, save_path):
 
 
 def model_aligner_colmap(COLMAP, sparse_dir, tmp_database_dir, json_base_dir):
-    save_prior_position(json_base_dir, tmp_database_dir + "coords.txt")
+    save_prior_position(json_base_dir, tmp_database_dir)
     pIntrisics = subprocess.Popen(
-        [COLMAP, "model_aligner", "--input_path", sparse_dir+"0/", "--output_path", sparse_dir+"0_aligned/", 
-        "--ref_images_path", tmp_database_dir + "coords.txt", "--robust_alignment_max_error", "1", "--alignment_type", "custom"])
+        [COLMAP, "model_aligner", "--input_path", sparse_dir+"0/", "--output_path", sparse_dir+"0/", "--ref_is_gps", "0",
+           "--ref_images_path", tmp_database_dir + "coords.txt", "--robust_alignment_max_error", "1", "--alignment_type", "custom"])
     pIntrisics.wait()
 
 

@@ -27,7 +27,7 @@ def main_test():
     #print(r.text)
     #print("ClearWorkspace...end...")
     #CaptureSDK.post_to_server(api_url, token, image_base_dir, seq_base, bank, username, password)
-    print("post_to_server---------------END")
+    print("post_to_server---------------END")'''
 
     print("StartMapConstruction---------------BEGIN")
     print("StartMapConstruction...start...")
@@ -35,7 +35,7 @@ def main_test():
                                           bank, username, password)
     print(ret)
     print("StartMapConstruction...end...")
-    print("StartMapConstruction---------------FIN")'''
+    print("StartMapConstruction---------------FIN")
 
     print("QueryLocal---------------BEGIN")
     print("QueryLocal...uploadImagePath: " + str(uploadImagePath))
