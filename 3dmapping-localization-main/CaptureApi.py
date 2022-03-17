@@ -190,9 +190,22 @@ def QueryLocal():
     print("QueryLocal (image_name_jpg, q, t):" + str(
         (image_name_jpg, q, t)) + " FIN")
     shutil.rmtree(upload_image_tmp_dir, ignore_errors=True)
-    return jsonify(json.dumps((image_name_jpg, q, t), cls=Utils.NDArrayEncoder))
+
+    lat_ref, lon_ref, h_ref = read_map_origin_GPS(database_dir)
+
+    return jsonify(json.dumps((image_name_jpg, q, t, lat_ref, lon_ref, h_ref), cls=Utils.NDArrayEncoder))
 
     ##
+
+def read_map_origin_GPS(database_dir):
+    with open(database_dir+"map_origin.txt") as f:
+        GPS_txt = f.readline()
+        temp_list = GPS_txt.split()
+        lat_ref, lon_ref, h_ref = float(temp_list[0]), float(temp_list[1]), float(temp_list[2])
+
+
+    return lat_ref, lon_ref, h_ref
+
 
 
 @app.route('/capture-photo/cvquerylocal', methods=['GET', 'POST'])

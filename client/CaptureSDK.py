@@ -46,24 +46,12 @@ def post_to_server(api_url, token, image_base_dir, seq_base, bank, username, pas
         submit_image(api_url, token, imagePath, seq, bank, username, password);
     return
 
-def readGPS(filename, image_name):
-    px, py, pz = 0.0, 0.0, 0.0
-    f = open(filename)
-    GPS_data = f.readlines()
-    for data in GPS_data:
-        temp = data.split()
-        if temp[0] == image_name:
-            px, py, pz = float(temp[1]), float(temp[2]),float(temp[3])
-    return px, py, pz
 
 def submit_image(api_url, token, imagePath, seq, bank, username, password):
     print("submit_image...start...")
     complete_url = api_url + '/captureb64'
     (image_dir, image_name) = os.path.split(imagePath)
     image_name = image_name.split('.')[0] + ".jpg"
-    px, py, pz = 0.0, 0.0, 0.0
-    if os.path.isfile("GPS.txt"):
-        px, py, pz = readGPS("GPS.txt", image_name)
     data = {
         "token": token,
         "bank": bank,  # default workspace/image bank
@@ -71,9 +59,9 @@ def submit_image(api_url, token, imagePath, seq, bank, username, password):
         # a running integer for the tracker session. Increment if tracking is lost or image is from a different session
         "index": seq,  # running index for images
         "anchor": False,  # flag for the image used as an anchor/map origin
-        "px": px,  # GPS, lon
-        "py": py,  # GPS, lat
-        "pz": pz,  # GPS, h
+        "px": 0.0,  # camera x position from the tracker
+        "py": 0.0,  # camera y position from the tracker
+        "pz": 0.0,  # camera z position from the tracker
         "r00": 1.0,  # camera orientation as a 3x3 matrix
         "r01": 0.0,
         "r02": 0.0,
@@ -91,7 +79,6 @@ def submit_image(api_url, token, imagePath, seq, bank, username, password):
         "image_name": image_name
         # base64 encoded .jpg image
     }
-    print(px, py, pz)
 
     json_data = json.dumps(data)
     # print(json_data)
@@ -155,7 +142,8 @@ def QueryLocal(url, token, uploadImagePath, bank, username, password):
     ret_image_name = return_obj[0]
     ret_qvec = return_obj[1]
     ret_tvec = return_obj[2]
-    return (ret_image_name, ret_qvec, ret_tvec)
+    lat_ref, lon_ref, h_ref = return_obj[3], return_obj[4], return_obj[5]
+    return (ret_image_name, ret_qvec, ret_tvec, lat_ref, lon_ref, h_ref)
 
 
 def CVQueryLocal(url, token, cvImagePath, bank, username, password):

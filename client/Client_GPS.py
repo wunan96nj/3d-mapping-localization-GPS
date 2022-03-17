@@ -39,11 +39,11 @@ def main_test():
 
     print("QueryLocal---------------BEGIN")
     print("QueryLocal...uploadImagePath: " + str(uploadImagePath))
-    (ret_image_name, ret_qvec, ret_tvec) = CaptureSDK.QueryLocal(
+    (ret_image_name, ret_qvec, ret_tvec, lat_ref, lon_ref, h_ref) = CaptureSDK.QueryLocal(
         api_url, token, uploadImagePath, bank, username, password)
     print(
-        "(ret_image_name, ret_qvec, ret_tvec):%s" % str(
-            (ret_image_name, ret_qvec, ret_tvec)))
+        "(ret_image_name, ret_qvec, ret_tvec, lat_ref, lon_ref, h_ref):%s" % str(
+            (ret_image_name, ret_qvec, ret_tvec, lat_ref, lon_ref, h_ref)))
     ##
     (image_id, qvec, tvec,
      camera_id, image_name,
