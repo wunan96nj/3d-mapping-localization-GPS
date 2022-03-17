@@ -177,6 +177,7 @@ def QueryLocal():
     print(
         "QueryLocal upload_database_file_full_path: " + upload_database_file_full_path)
 
+
     QueryLocalUtil.save_image(b64, bank, upload_image_tmp_dir,
                               upload_image_file_full_path)
     QueryLocalUtil.get_feature_upload(COLMAP, image_name_prefix + ".db",
@@ -188,6 +189,7 @@ def QueryLocal():
         image_name_prefix + ".jpg")
     print("QueryLocal (image_name_jpg, q, t):" + str(
         (image_name_jpg, q, t)) + " FIN")
+    shutil.rmtree(upload_image_tmp_dir, ignore_errors=True)
     return jsonify(json.dumps((image_name_jpg, q, t), cls=Utils.NDArrayEncoder))
 
     ##

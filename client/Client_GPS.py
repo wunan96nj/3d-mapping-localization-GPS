@@ -18,10 +18,10 @@ def main_test():
     bank = 0
     # feature_dim: colmap use 6, cv use 2
     feature_dim = 6
-    uploadImagePath = "images/P1180141.jpg"
+    uploadImagePath = "images/P1180148.jpg"
     cloudPlyFile = "cloudPlyFile.ply"
 
-    print("post_to_server---------------BEGIN")
+    '''print("post_to_server---------------BEGIN")
     #print("ClearWorkspace...start...")
     #r = CaptureSDK.ClearWorkspace(api_url, token, deleteAnchorImage, bank, username, password)
     #print(r.text)
@@ -35,7 +35,7 @@ def main_test():
                                           bank, username, password)
     print(ret)
     print("StartMapConstruction...end...")
-    print("StartMapConstruction---------------FIN")
+    print("StartMapConstruction---------------FIN")'''
 
     print("QueryLocal---------------BEGIN")
     print("QueryLocal...uploadImagePath: " + str(uploadImagePath))
@@ -77,12 +77,12 @@ def main_test():
             (distance_q, distance_t)))
     print("CVQueryLocal---------------END")'''
 
-    print("Query3DCouldPoint to file ---------------BEGIN")
+    '''print("Query3DCouldPoint to file ---------------BEGIN")
     (db_points_pos, db_points_des, dp_points_rgb) = CaptureSDK.Query3DCouldPoint(api_url, token, bank, username,
                                                                                  password)
     # print(db_points_pos, db_points_des, dp_points_rgb)
     CaptureSDK.Write3dmap2PlyFile(db_points_pos, db_points_des, dp_points_rgb, cloudPlyFile)
-    print("Query3DCouldPoint---------------END")
+    print("Query3DCouldPoint---------------END")'''
     return
 
 

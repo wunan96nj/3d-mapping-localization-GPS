@@ -10,7 +10,147 @@ import subprocess
 from map3d.util.db import database, write_to_nw_db
 from map3d.util.calc import get_point_pos_des, get_point_feature
 import open3d
+import json
 
+import math
+ 
+a = 6378137
+b = 6356752.3142
+f = (a - b) / a
+e_sq = f * (2-f)
+pi = 3.14159265359
+ 
+def geodetic_to_ecef(lat, lon, h):
+    # (lat, lon) in degrees
+    # h in meters
+    lamb = math.radians(lat)
+    phi = math.radians(lon)
+    s = math.sin(lamb)
+    N = a / math.sqrt(1 - e_sq * s * s)
+ 
+    sin_lambda = math.sin(lamb)
+    cos_lambda = math.cos(lamb)
+    sin_phi = math.sin(phi)
+    cos_phi = math.cos(phi)
+ 
+    x = (h + N) * cos_lambda * cos_phi
+    y = (h + N) * cos_lambda * sin_phi
+    z = (h + (1 - e_sq) * N) * sin_lambda
+ 
+    return x, y, z
+ 
+def ecef_to_enu(x, y, z, lat0, lon0, h0):
+    lamb = math.radians(lat0)
+    phi = math.radians(lon0)
+    s = math.sin(lamb)
+    N = a / math.sqrt(1 - e_sq * s * s)
+ 
+    sin_lambda = math.sin(lamb)
+    cos_lambda = math.cos(lamb)
+    sin_phi = math.sin(phi)
+    cos_phi = math.cos(phi)
+ 
+    x0 = (h0 + N) * cos_lambda * cos_phi
+    y0 = (h0 + N) * cos_lambda * sin_phi
+    z0 = (h0 + (1 - e_sq) * N) * sin_lambda
+ 
+    xd = x - x0
+    yd = y - y0
+    zd = z - z0
+ 
+    t = -cos_phi * xd -  sin_phi * yd
+ 
+    xEast = -sin_phi * xd + cos_phi * yd
+    yNorth = t * sin_lambda  + cos_lambda * zd
+    zUp = cos_lambda * cos_phi * xd + cos_lambda * sin_phi * yd + sin_lambda * zd
+ 
+    return xEast, yNorth, zUp
+ 
+def enu_to_ecef(xEast, yNorth, zUp, lat0, lon0, h0):
+    lamb = math.radians(lat0)
+    phi = math.radians(lon0)
+    s = math.sin(lamb)
+    N = a / math.sqrt(1 - e_sq * s * s)
+ 
+    sin_lambda = math.sin(lamb)
+    cos_lambda = math.cos(lamb)
+    sin_phi = math.sin(phi)
+    cos_phi = math.cos(phi)
+ 
+    x0 = (h0 + N) * cos_lambda * cos_phi
+    y0 = (h0 + N) * cos_lambda * sin_phi
+    z0 = (h0 + (1 - e_sq) * N) * sin_lambda
+ 
+    t = cos_lambda * zUp - sin_lambda * yNorth
+ 
+    zd = sin_lambda * zUp + cos_lambda * yNorth
+    xd = cos_phi * t - sin_phi * xEast 
+    yd = sin_phi * t + cos_phi * xEast
+ 
+    x = xd + x0 
+    y = yd + y0 
+    z = zd + z0 
+ 
+    return x, y, z
+ 
+def ecef_to_geodetic(x, y, z):
+   # Convert from ECEF cartesian coordinates to 
+   # latitude, longitude and height.  WGS-84
+    x2 = x ** 2 
+    y2 = y ** 2 
+    z2 = z ** 2 
+ 
+    a = 6378137.0000    # earth radius in meters
+    b = 6356752.3142    # earth semiminor in meters 
+    e = math.sqrt (1-(b/a)**2) 
+    b2 = b*b 
+    e2 = e ** 2 
+    ep = e*(a/b) 
+    r = math.sqrt(x2+y2) 
+    r2 = r*r 
+    E2 = a ** 2 - b ** 2 
+    F = 54*b2*z2 
+    G = r2 + (1-e2)*z2 - e2*E2 
+    c = (e2*e2*F*r2)/(G*G*G) 
+    s = ( 1 + c + math.sqrt(c*c + 2*c) )**(1/3) 
+    P = F / (3 * (s+1/s+1)**2 * G*G) 
+    Q = math.sqrt(1+2*e2*e2*P) 
+    ro = -(P*e2*r)/(1+Q) + math.sqrt((a*a/2)*(1+1/Q) - (P*(1-e2)*z2)/(Q*(1+Q)) - P*r2/2) 
+    tmp = (r - e2*ro) ** 2 
+    U = math.sqrt( tmp + z2 ) 
+    V = math.sqrt( tmp + (1-e2)*z2 ) 
+    zo = (b2*z)/(a*V) 
+ 
+    height = U*( 1 - b2/(a*V) ) 
+    
+    lat = math.atan( (z + ep*ep*zo)/r ) 
+ 
+    temp = math.atan(y/x) 
+    if x >=0 :    
+        long = temp 
+    elif (x < 0) & (y >= 0):
+        long = pi + temp 
+    else :
+        long = temp - pi 
+ 
+    lat0 = lat/(pi/180) 
+    lon0 = long/(pi/180) 
+    h0 = height 
+ 
+    return lat0, lon0, h0
+ 
+ 
+def geodetic_to_enu(lat, lon, h, lat_ref, lon_ref, h_ref):
+ 
+    x, y, z = geodetic_to_ecef(lat, lon, h)
+    
+    return ecef_to_enu(x, y, z, lat_ref, lon_ref, h_ref)
+ 
+def enu_to_geodetic(xEast, yNorth, zUp, lat_ref, lon_ref, h_ref):
+ 
+    x,y,z = enu_to_ecef(xEast, yNorth, zUp, lat_ref, lon_ref, h_ref)
+ 
+    return ecef_to_geodetic(x,y,z)
 
 class NDArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -46,10 +186,12 @@ def write_to_file(content_s, file_full_path, is_base64):
     if is_base64:
         base64_bytes = content_s.encode('ascii')
         file_bytes = base64.b64decode(base64_bytes)
+        with open(file_full_path, 'wb') as f:
+            f.write(file_bytes)
     else:
-        file_bytes = content_s.encode('ascii')
-    with open(file_full_path, 'wb') as f:
-        f.write(file_bytes)
+        #file_bytes = content_s.encode('ascii')
+        with open(file_full_path, 'w') as fp:
+            json.dump(content_s, fp)
     return
 
 
@@ -94,14 +236,14 @@ def feature_one_image_cv(img_name, img_folder):
 
 
 def feature_colmap(COLMAP, database_name, tmp_database_dir, image_dir):
-    pIntrisics = subprocess.Popen(
-        [COLMAP, "feature_extractor", "--database_path",
-         tmp_database_dir + database_name, "--image_path", image_dir,
-         "--ImageReader.camera_model", "SIMPLE_PINHOLE", "--SiftExtraction.use_gpu", "false"])
     '''pIntrisics = subprocess.Popen(
         [COLMAP, "feature_extractor", "--database_path",
          tmp_database_dir + database_name, "--image_path", image_dir,
-         "--ImageReader.camera_model", "SIMPLE_PINHOLE"])'''
+         "--ImageReader.camera_model", "SIMPLE_PINHOLE", "--SiftExtraction.use_gpu", "false"])'''
+    pIntrisics = subprocess.Popen(
+        [COLMAP, "feature_extractor", "--database_path",
+         tmp_database_dir + database_name, "--image_path", image_dir,
+         "--ImageReader.camera_model", "SIMPLE_PINHOLE"])
     pIntrisics.wait()
 
 
@@ -115,6 +257,7 @@ def match_colmap(COLMAP, database_name, tmp_database_dir, image_dir ):
     pIntrisics.wait()
 
 
+
 def point_triangulator_colmap(COLMAP, database_name, sparse_dir,
                               tmp_database_dir, image_dir ):
     pIntrisics = subprocess.Popen(
@@ -123,6 +266,35 @@ def point_triangulator_colmap(COLMAP, database_name, sparse_dir,
          "--image_path", image_dir, "--output_path",
          sparse_dir, "--Mapper.ba_refine_focal_length", "0",
          "--Mapper.ba_refine_extra_params", "0"])
+    pIntrisics.wait()
+
+def save_prior_position(json_base_dir, save_path):
+    print(json_base_dir)
+    file_list = os.listdir(json_base_dir)
+
+
+    f  = open(save_path, 'w')
+    lat_ref, lon_ref, h_ref = 0.0, 0.0, 0.0
+    for fileindex in range(len(file_list)):
+        with open(json_base_dir + file_list[fileindex]) as json_file:
+            data = json.load(json_file)
+            lat = data["px"]
+            lon = data["py"]
+            h = data["pz"]
+            if fileindex == 0:
+                lat_ref, lon_ref, h_ref = lat, lon, h
+            xEast, yNorth, zUp = geodetic_to_enu(lat, lon, h, lat_ref, lon_ref, h_ref)
+
+        f.write("%s %f %f %f\n" %(data["image_name"], xEast, yNorth, zUp))
+    f.close()
+
+
+
+def model_aligner_colmap(COLMAP, sparse_dir, tmp_database_dir, json_base_dir):
+    save_prior_position(json_base_dir, tmp_database_dir + "coords.txt")
+    pIntrisics = subprocess.Popen(
+        [COLMAP, "model_aligner", "--input_path", sparse_dir+"0/", "--output_path", sparse_dir+"0_aligned/", 
+        "--ref_images_path", tmp_database_dir + "coords.txt", "--robust_alignment_max_error", "1", "--alignment_type", "custom"])
     pIntrisics.wait()
 
 
