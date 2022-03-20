@@ -73,12 +73,17 @@ def create_geopose_request(img_file_base64_string, lat, lon):
 
 def main():
     api_url = "http://localhost:5666/capture-photo/getgeoposreq"
-    uploadImagePath = "../client/images/P1180141.jpg"
+    image_name = "P1180141.jpg"
+    uploadImagePath = "../client/images/" + image_name
     img_file_base64_string = str(ConvertToBase64(uploadImagePath), 'utf-8')
     json_data = create_geopose_request(img_file_base64_string, 1, 1)
     ret = requests.post(api_url, data=json_data)
     ret = ret.json()
     print(ret)
+
+    json_data = json_data = json.dumps({"image_name": image_name})
+    requests.post("http://localhost:5666/capture-photo/goepose_gt", data=json_data)
+
 
     return
 

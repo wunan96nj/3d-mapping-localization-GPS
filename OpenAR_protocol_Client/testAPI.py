@@ -328,7 +328,11 @@ def QueryLocal(url, token, uploadimageb64, sequence_number, bank, username, pass
 
 
 @app.route('/capture-photo/goepose_gt', methods=['GET', 'POST'])
-def imageBinInfo(url, token, image_name, bank, username, password):
+def imageBinInfo():
+    url, token, bank, username, password = "http://localhost:5444/capture-photo", "192b47014ee982495df0a08674ac49a11eca4cb4427e3115a0254b89d07587cc", 0, 'sample_user', 'pass'
+    json_data = request.get_json(force=True)
+    image_name = json_data["image_name"]
+
     # image_name = image_name.split('.')[0]
     print("ImageBinInfo...bank: " + str(bank))
     print("ImageBinInfo...image_name: " + str(image_name))
@@ -339,8 +343,13 @@ def imageBinInfo(url, token, image_name, bank, username, password):
         "image_name": image_name
     }
     json_data = json.dumps(data)
-    return_obj = json.loads(requests.post(complete_url, data=json_data, auth=(username, password)).json())
-    return return_obj     
+    (image_id, qvec, tvec,
+     camera_id, image_name,
+     xys, point3D_ids) = json.loads(requests.post(complete_url, data=json_data, auth=(username, password)).json())
+
+    print("Print out localization ground truth (q, t)")
+    print(qvec, tvec)
+    return None
         
 
 ## Actually setup the Api resource routing here
