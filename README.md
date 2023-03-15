@@ -4,20 +4,20 @@ Requirements:
 
 Create a folder for the workspace, it should be added in the .env file in the server directory.
 
-mkdir colmap_workspace
+    mkdir colmap_workspace
 
-modify the root_dir path in server.env
+    modify the root_dir path in server.env
 
 Create a conda environment:
 
 
-conda create -n colmap python=3.6
+    conda create -n colmap python=3.6
 
-conda activate colmap_test
+    conda activate colmap_test
 
 Install the python packages:
 
-pip install numpy flask flask_restful opencv-python scipy open3d environs flask_httpauth
+    pip install numpy flask flask_restful opencv-python scipy open3d environs flask_httpauth
 
 
 
